@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest">
 
-  <Identity Name="491e24f0-b48c-4cf9-b910-cf6ad3ff1581"
+  <Identity Name="e91a6564-62fe-4ed6-b146-f4f1a952309a"
             Publisher="CN=denisok"
             Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>BroadcastConsole.Metro</DisplayName>
+    <DisplayName>BroadcastConsole.MetroClient</DisplayName>
     <PublisherDisplayName>denisok</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -23,12 +23,12 @@
   <Applications>
     <Application Id="App"
         Executable="$targetnametoken$.exe"
-        EntryPoint="BroadcastConsole.Metro.App">
+        EntryPoint="BroadcastConsole.MetroClient.App">
         <VisualElements
-            DisplayName="BroadcastConsole.Metro"
+            DisplayName="BroadcastConsole.MetroClient"
             Logo="Assets\Logo.png"
             SmallLogo="Assets\SmallLogo.png"
-            Description="BroadcastConsole.Metro"
+            Description="BroadcastConsole.MetroClient"
             ForegroundText="light"
             BackgroundColor="#464646">
             <DefaultTile ShowName="allLogos" />

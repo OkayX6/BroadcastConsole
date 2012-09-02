@@ -1,4 +1,4 @@
-﻿module Mocks
+﻿module BroadcastConsole.Test.Mocks
 
 open System
 open BroadcastConsole.Common
@@ -23,6 +23,8 @@ type ConnectionMock(name: string) =
         member this.Send (msg: Message) =
             history.Add(msg)
             printfn "[%O][%O] %O" connectionName name msg
+
+        member this.Dispose () = ()
 
 type ConnectionListenerMock(maxConnections: int, gen) =
     let channels = new ResizeArray<ConnectionMock>()

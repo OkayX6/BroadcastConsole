@@ -4,7 +4,8 @@ open System.Threading
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open BroadcastConsole.Common
 open BroadcastConsole.Common.Interfaces
-open Mocks
+open BroadcastConsole.Common.Helpers
+open BroadcastConsole.Test.Mocks
 
 [<TestClass>]
 type ServerTests() =

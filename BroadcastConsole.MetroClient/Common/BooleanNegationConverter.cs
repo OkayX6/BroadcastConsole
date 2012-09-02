@@ -1,7 +1,7 @@
 ﻿using System;
 using Windows.UI.Xaml.Data;
 
-namespace BroadcastConsole.Metro.Common
+namespace BroadcastConsole.MetroClient.Common
 {
     /// <summary>
     /// Value converter that translates true to false and vice versa.

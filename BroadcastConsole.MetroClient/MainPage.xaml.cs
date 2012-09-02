@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using BroadcastConsole.Metro.Common;
+using BroadcastConsole.MetroClient.Common;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234237
 
-namespace BroadcastConsole.Metro
+namespace BroadcastConsole.MetroClient
 {
     /// <summary>
     /// A basic page that provides characteristics common to most applications.
     /// </summary>
-    public sealed partial class MainPage : BroadcastConsole.Metro.Common.LayoutAwarePage
+    public sealed partial class MainPage : BroadcastConsole.MetroClient.Common.LayoutAwarePage
     {
         public MainPage()
         {
