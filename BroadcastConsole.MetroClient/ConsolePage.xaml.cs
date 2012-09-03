@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
+using System.Threading.Tasks;
+using BroadcastConsole.Common.WinRT;
 using BroadcastConsole.MetroClient.Common;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
@@ -14,6 +18,10 @@ namespace BroadcastConsole.MetroClient
     /// </summary>
     public sealed partial class ConsolePage
     {
+        private TcpConnection tcpClient;
+        private readonly ObservableCollection<String> messageHistory = new ObservableCollection<String>();
+        private CancellationTokenSource tokenSource = new CancellationTokenSource();
+
         public ConsolePage()
         {
             InitializeComponent();
@@ -32,8 +40,26 @@ namespace BroadcastConsole.MetroClient
         {
             DefaultViewModel["ChannelName"] = navigationParameter as string;
 
-            var messageHistory = new ObservableCollection<String>();
             DefaultViewModel["MessageHistory"] = messageHistory;
+
+            this.tcpClient = new TcpConnection("127.0.0.1", 2009);
+            this.tcpClient.Send("Cloud");
+
+            Task.Factory.StartNew(() => BackgroundUpdater(tokenSource.Token));
+        }
+
+        private void BackgroundUpdater(CancellationToken token)
+        {
+            while (! token.IsCancellationRequested)
+            {
+                var message = this.tcpClient.Receive();
+
+                Dispatcher.RunAsync(
+                    CoreDispatcherPriority.Normal,
+                    () => messageHistory.Insert(0, message));
+            }
+
+            tcpClient.Dispose();
         }
 
         /// <summary>
@@ -44,11 +70,13 @@ namespace BroadcastConsole.MetroClient
         /// <param name="pageState">An empty dictionary to be populated with serializable state.</param>
         protected override void SaveState(Dictionary<String, Object> pageState)
         {
+            tokenSource.Cancel();
+            tokenSource = new CancellationTokenSource();
         }
 
         private void OnAddMessage(object sender, RoutedEventArgs e)
         {
-            ((ObservableCollection<string>)DefaultViewModel["MessageHistory"]).Insert(0, "Hello " + Guid.NewGuid());
+            messageHistory.Insert(0, "Hello " + Guid.NewGuid());
         }
     }
 }

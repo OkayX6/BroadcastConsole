@@ -24,6 +24,8 @@ type TcpConnection(tcpClient: TcpClient) =
                 let byteArray = Array.zeroCreate 4
                 do stream.Read(byteArray, 0, 4) |> ignore
                 Helpers.intOfByteArray byteArray
+
+            printfn "IConnection msgSize: %O" msgSize
             
             // Get msg
             let msg =
@@ -31,6 +33,7 @@ type TcpConnection(tcpClient: TcpClient) =
                 stream.Read(byteArray, 0, msgSize) |> ignore
                 Helpers.stringOfByteArray byteArray
 
+            printfn "IConnection receive: %O" msg
             msg
 
         member this.Send (msg: Message) =
@@ -55,4 +58,5 @@ type TcpConnectionListener(port: int) =
     interface IConnectionListener with
         member this.Accept (): IConnection =
             let tcpClient = tcpListener.AcceptTcpClient()
+            printfn "New connection!"
             new TcpConnection(tcpClient) :> IConnection

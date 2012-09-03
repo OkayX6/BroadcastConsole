@@ -19,5 +19,10 @@ let server = new Server(tcpListener)
 
 do
     while true do
-        server.SendMessage("Cloud", System.DateTime.Now.ToShortTimeString())
+        let ChannelName = "Cloud"
+        let Msg = System.DateTime.Now.ToLongTimeString()
+
+        printfn "[%O]: %O" ChannelName Msg
+
+        server.SendMessage(ChannelName, Msg)
         System.Threading.Thread.Sleep(millisecondsTimeout = 1000)
