@@ -56,7 +56,7 @@ type ServerTests() =
         3 == listener.ConnectionCount
 
     [<TestMethod>]
-    member this.Subscriber_WhenConnected_IsRegistered() =
+    member this.Subscriber_WhenConnected_IsRequestedChannelName() =
         let listener = new ConnectionListenerMock()
         let server = new Server(listener)
         do shortWait ()
@@ -64,10 +64,10 @@ type ServerTests() =
         let connection = new ConnectionMock(listener)
         do shortWait ()
 
-        (?+) connection.IsRegistered
+        (?+) connection.ChannelNameIsRequested
 
     [<TestMethod>]
-    member this.Subscribers_WhenConnected_AreRegistered() =
+    member this.Subscribers_WhenConnected_AreRequestedTheirChannelName() =
         let listener = new ConnectionListenerMock()
         let server = new Server(listener)
         let connections =
@@ -83,7 +83,7 @@ type ServerTests() =
 
         listener.OpenedConnections
         |> Seq.map (fun oppCon -> oppCon.SourceConnection)
-        |> Seq.iter (fun srcCon -> (?+) srcCon.IsRegistered)
+        |> Seq.iter (fun srcCon -> (?+) srcCon.ChannelNameIsRequested)
 
     [<TestMethod>]
     member this.Subscriber_WhenServerSendsMessages_ToCorrectChannel_IsNotified() =
@@ -152,40 +152,41 @@ type ServerTests() =
             (?+) (functionTimesOut connection.Receive)
             Message == msg
 
-//    [<TestMethod>]
-//    member this.Subscribers_ToSameChannel_WhenServerSendsMessages_AreNotified() =
-//        let ChannelName = "Channel"
-//        let MESSAGES = ["1"; "2"; "3"]
-//        let listener = new ConnectionListenerMock()
-//        let server = new Server(listener)
-//        let connection = new ConnectionMock(listener, ChannelName)
-//        do shortWait ()
-//
-//        server.SendMessage(ChannelName + "1", "heyhey")
-//
-//        for msg in MESSAGES do
-//            server.SendMessage(ChannelName, msg)
-//        do shortWait ()
-//
-//        for channel in listener.OpenedChannels do
-//            let history = channel.MessageHistory
-//            let sendMsgSet = Set.ofSeq MESSAGES
-//            let receivedMsgSet = Set.ofSeq history
-//
-//            Assert.AreEqual(3, history.Length)
-//            Assert.AreEqual(sendMsgSet, receivedMsgSet)
+    [<TestMethod>]
+    member this.Subscribers_ToSameChannel_WhenServerSendsMessages_AreNotified() =
+        let ChannelName = "Channel"
+        let MESSAGES = ["1"; "2"; "3"]
+        let listener = new ConnectionListenerMock()
+        let server = new Server(listener)
+        let connections =
+            [
+                new ConnectionMock(listener, ChannelName)
+                new ConnectionMock(listener, ChannelName)
+                new ConnectionMock(listener, ChannelName)
+            ]
 
-//    [<TestMethod>]
-//    member this.Connection_CanEstablish_WithServer() =
-//        let listener = new ConnectionListenerMock()
-//        use connection = new ConnectionMock()
-//        
-//        Assert.IsFalse(listener.GotConnection)
-//
-//        let server = new Server(listener)
-//        do shortWait ()
-//
-//        (?+) listener.GotConnection
+        do shortWait ()
+
+        server.SendMessage(ChannelName + "1", "heyhey")
+
+        for msg in MESSAGES do
+            server.SendMessage(ChannelName, msg)
+        do shortWait ()
+
+        for oppCon in listener.OpenedConnections do
+            let connection = oppCon.SourceConnection
+
+            connection.Receive() |> ignore
+            connection.Receive() |> ignore
+            connection.Receive() |> ignore
+            (?+) (functionTimesOut connection.Receive)
+
+            let history = connection.MessageHistory
+            let sendMsgSet = Set.ofSeq MESSAGES
+            let receivedMsgSet = Set.ofSeq history
+
+            3 == history.Count
+            sendMsgSet == receivedMsgSet
 
 //    [<TestMethod>]
 //    member this.MultipleMessages_ToSameConnection_AreSerialized() =

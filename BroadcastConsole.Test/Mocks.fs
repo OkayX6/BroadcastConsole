@@ -11,7 +11,7 @@ open BroadcastConsole.Common.Interfaces
 let private waitOrFail condition =
     let mutable i = 0
     while i < 5 && condition () do
-        Thread.Sleep 0
+        Thread.Sleep 5
         i <- i + 1
 
     if condition () then
@@ -26,7 +26,6 @@ type ConnectionMock(listener: ConnectionListenerMock, name: string) as this =
     let messageHistory = new ResizeArray<_>()
     let sendMessage msg =
         messageQueue.Enqueue(msg)
-        messageHistory.Add(msg)
 
     do
         listener.Enqueue(oppositeConnection)
@@ -38,7 +37,7 @@ type ConnectionMock(listener: ConnectionListenerMock, name: string) as this =
     new (listener: ConnectionListenerMock) =
         new ConnectionMock(listener, "DefaultChannelName")
 
-    member val IsRegistered : bool = false with get, set
+    member val ChannelNameIsRequested : bool = false with get, set
     member val MessageQueue : Queue<_> = messageQueue
     member val MessageHistory : ResizeArray<_> = messageHistory
 
@@ -51,6 +50,7 @@ type ConnectionMock(listener: ConnectionListenerMock, name: string) as this =
 
             let msg = oppositeConnection.MessageQueue.Dequeue()
             this.MessageHistory.Add(msg)
+            printfn "Received message: %O (count = %O)" msg (this.MessageHistory.Count)
             msg
 
         member this.Send (msg: Message) =
@@ -73,7 +73,7 @@ and OppositeConnectionMock(connection: ConnectionMock) =
         member this.Receive () =
             waitOrFail (fun () -> this.SourceConnection.MessageQueue.Count = 0)
 
-            this.SourceConnection.IsRegistered <- true
+            this.SourceConnection.ChannelNameIsRequested <- true
             this.SourceConnection.MessageQueue.Dequeue()
 
         member this.Send (msg: Message) =
