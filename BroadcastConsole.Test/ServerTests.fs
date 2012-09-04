@@ -188,6 +188,18 @@ type ServerTests() =
             3 == history.Count
             sendMsgSet == receivedMsgSet
 
-//    [<TestMethod>]
-//    member this.MultipleMessages_ToSameConnection_AreSerialized() =
-//        Assert.IsTrue()
+    [<TestMethod>]
+    member this.Server_KnowsWhenSubscriberConnectionIsLost() =
+        Assert.Inconclusive()
+
+    [<TestMethod>]
+    member this.Server_KnowsWhenPublisherConnectionIsLost() =
+        Assert.Inconclusive()
+
+    [<TestMethod>]
+    member this.Server_WhenOpeningAndClosingConnectionsWithSubscribers_IsStableInMemory() =
+        Assert.Inconclusive()
+
+    [<TestMethod>]
+    member this.Server_WhenOpeningAndClosingConnectionsWithPublishers_IsStableInMemory() =
+        Assert.Inconclusive()
