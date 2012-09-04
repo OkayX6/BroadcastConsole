@@ -5,7 +5,7 @@
 // Learn more about F# at http://fsharp.net. See the 'F# Tutorial' project
 // for more guidance on F# programming.
 
-#r "bin/Release/BroadcastConsole.Common.dll"
+#r "bin/Debug/BroadcastConsole.Common.dll"
 #load "Implementation.fs"
 
 open BroadcastConsole.Common

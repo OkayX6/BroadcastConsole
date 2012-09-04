@@ -6,30 +6,51 @@ open BroadcastConsole.Common
 open BroadcastConsole.Common.Interfaces
 open BroadcastConsole.Common.Helpers
 open BroadcastConsole.Test.Mocks
+open TestUtils
 
 [<TestClass>]
 type ServerTests() =
     let wait (ms: int) = Thread.Sleep(millisecondsTimeout = ms)
     let shortWait () = wait 10
+    let functionTimesOut (f: unit -> _) =
+        let asyncFun =
+            async {
+                do! Async.SwitchToThreadPool()
+                return f()
+            }
+        
+        try
+            let _ = Async.RunSynchronously (asyncFun, 10)
+            false
+        with
+            _ -> true
 
     [<TestMethod>]
     member this.Server_Accepts_OneSubscriber() =
         let listener = new ConnectionListenerMock()
-        
-        Assert.IsFalse(listener.GotConnection)
-
         let server = new Server(listener)
+        
+        (?-) listener.GotConnection
+
+        let connection = new ConnectionMock(listener)
         do shortWait ()
 
         (?+) listener.GotConnection
 
     [<TestMethod>]
     member this.Server_Accepts_ManySubscribers() =
-        let listener = new ConnectionListenerMock(maxConnections = 4)
+        let listener = new ConnectionListenerMock()
         let server = new Server(listener)
         do shortWait ()
 
-        4 == listener.ConnectionCount
+        let create () = new ConnectionMock(listener)
+
+        let c1 = new ConnectionMock(listener)
+        let c2 = new ConnectionMock(listener)
+        let c3 = new ConnectionMock(listener)
+        do shortWait ()
+
+        3 == listener.ConnectionCount
 
     [<TestMethod>]
     member this.Subscriber_WhenConnected_IsRegistered() =
@@ -37,28 +58,39 @@ type ServerTests() =
         let server = new Server(listener)
         do shortWait ()
 
-        let channel = listener.OpenedChannels.[0]
-        (?+) channel.IsRegistered
+        let connection = new ConnectionMock(listener)
+        (connection :> IConnection).Send("channelName")
+        do shortWait ()
+
+        (?+) connection.IsRegistered
 
     [<TestMethod>]
     member this.Subscribers_WhenConnected_AreRegistered() =
-        let MaxConnections = 4
-        let listener = new ConnectionListenerMock(MaxConnections)
+        let listener = new ConnectionListenerMock()
         let server = new Server(listener)
+        let connections =
+            [
+                new ConnectionMock(listener)
+                new ConnectionMock(listener)
+                new ConnectionMock(listener)
+            ]
+
         do shortWait ()
 
-        Assert.AreEqual(MaxConnections, listener.OpenedChannels.Length)
-        listener.OpenedChannels
-        |> Seq.iter (fun channel -> Assert.IsTrue(channel.IsRegistered))
+        connections.Length == listener.OpenedConnections.Length
+
+        listener.OpenedConnections
+        |> Seq.map (fun oppCon -> oppCon.SourceConnection)
+        |> Seq.iter (fun srcCon -> (?+) srcCon.IsRegistered)
 
     [<TestMethod>]
     member this.Subscriber_WhenServerSendsMessages_ToCorrectChannel_IsNotified() =
         let ChannelName = "Channel"
-        let channelNameGenerator () = ChannelName
         let Message1 = "hello"
         let Message2 = "denis"
-        let listener = new ConnectionListenerMock(1, channelNameGenerator)
+        let listener = new ConnectionListenerMock()
         let server = new Server(listener)
+        let connection = new ConnectionMock(listener, ChannelName) :> IConnection
         do shortWait ()
 
         // Send message to a wrong and the correct one
@@ -67,21 +99,21 @@ type ServerTests() =
         server.SendMessage(ChannelName, Message2)
         do shortWait ()
 
-        let channel = listener.OpenedChannels.[0]
-        let history = channel.MessageHistory
+        let msg1 = connection.Receive()
+        let msg2 = connection.Receive()
 
-        2        == history.Length
-        Message1 == history.[0]
-        Message2 == history.[1]
+        (?+) (functionTimesOut connection.Receive)
+        Message1 == msg1
+        Message2 == msg2
 
     [<TestMethod>]
     member this.Subscriber_WhenServerSendsMessages_ToOtherChannels_IsNotNotified() =
         let ChannelName = "Channel"
-        let channelNameGenerator () = ChannelName
         let Message1 = "hello"
         let Message2 = "denis"
-        let listener = new ConnectionListenerMock(1, channelNameGenerator)
+        let listener = new ConnectionListenerMock()
         let server = new Server(listener)
+        let connection = new ConnectionMock(listener, ChannelName) :> IConnection
         do shortWait ()
 
         // Send message to a wrong and the correct one
@@ -89,29 +121,19 @@ type ServerTests() =
         server.SendMessage(ChannelName + "1", Message1)
         do shortWait ()
 
-        let channel = listener.OpenedChannels.[0]
-        let history = channel.MessageHistory
-
-        0 == history.Length
+        (?+) (functionTimesOut connection.Receive)
 
     [<TestMethod>]
     member this.Subscribers_WhenServerSendsMessages_ToCorrectChannel_IsNotified() =
         let Channel1 = "Channel1"
         let Channel2 = "Channel2"
         let Channel3 = "Channel3"
-        let counter = ref 0
-
-        let channelNameGenerator () =
-            let result =
-                [| Channel1; Channel2; Channel3 |].[!counter % 3]
-
-            counter |> incr
-            result
-
-        let ConnectionCount = 3
         let Message = "hello"
-        let listener = new ConnectionListenerMock(ConnectionCount, channelNameGenerator)
+        let listener = new ConnectionListenerMock()
         let server = new Server(listener)
+        let c1 = new ConnectionMock(listener, Channel1) :> IConnection
+        let c2 = new ConnectionMock(listener, Channel2) :> IConnection
+        let c3 = new ConnectionMock(listener, Channel3) :> IConnection
         do shortWait ()
 
         // Send message to a wrong and the correct one
@@ -120,36 +142,48 @@ type ServerTests() =
         server.SendMessage(Channel3, Message)
         do shortWait ()
 
-        Assert.AreEqual(ConnectionCount, listener.OpenedChannels.Length)
+        3 == listener.OpenedConnections.Length
 
-        for channel in listener.OpenedChannels do
-            let history = channel.MessageHistory
+        for connection in [c1; c2; c3] do
+            let msg = connection.Receive()
 
-            Assert.AreEqual(1, history.Length)
-            Assert.AreEqual(Message, history.[0])
+            (?+) (functionTimesOut connection.Receive)
+            Message == msg
 
-    [<TestMethod>]
-    member this.Subscribers_ToSameChannel_WhenServerSendsMessages_AreNotified() =
-        let ChannelName = "Channel"
-        let channelNameGenerator () = ChannelName
-        let MESSAGES = ["1"; "2"; "3"]
-        let listener = new ConnectionListenerMock(4, channelNameGenerator)
-        let server = new Server(listener)
-        do shortWait ()
+//    [<TestMethod>]
+//    member this.Subscribers_ToSameChannel_WhenServerSendsMessages_AreNotified() =
+//        let ChannelName = "Channel"
+//        let MESSAGES = ["1"; "2"; "3"]
+//        let listener = new ConnectionListenerMock()
+//        let server = new Server(listener)
+//        let connection = new ConnectionMock(listener, ChannelName)
+//        do shortWait ()
+//
+//        server.SendMessage(ChannelName + "1", "heyhey")
+//
+//        for msg in MESSAGES do
+//            server.SendMessage(ChannelName, msg)
+//        do shortWait ()
+//
+//        for channel in listener.OpenedChannels do
+//            let history = channel.MessageHistory
+//            let sendMsgSet = Set.ofSeq MESSAGES
+//            let receivedMsgSet = Set.ofSeq history
+//
+//            Assert.AreEqual(3, history.Length)
+//            Assert.AreEqual(sendMsgSet, receivedMsgSet)
 
-        server.SendMessage(ChannelName + "1", "heyhey")
-
-        for msg in MESSAGES do
-            server.SendMessage(ChannelName, msg)
-        do shortWait ()
-
-        for channel in listener.OpenedChannels do
-            let history = channel.MessageHistory
-            let sendMsgSet = Set.ofSeq MESSAGES
-            let receivedMsgSet = Set.ofSeq history
-
-            Assert.AreEqual(3, history.Length)
-            Assert.AreEqual(sendMsgSet, receivedMsgSet)
+//    [<TestMethod>]
+//    member this.Connection_CanEstablish_WithServer() =
+//        let listener = new ConnectionListenerMock()
+//        use connection = new ConnectionMock()
+//        
+//        Assert.IsFalse(listener.GotConnection)
+//
+//        let server = new Server(listener)
+//        do shortWait ()
+//
+//        (?+) listener.GotConnection
 
 //    [<TestMethod>]
 //    member this.MultipleMessages_ToSameConnection_AreSerialized() =

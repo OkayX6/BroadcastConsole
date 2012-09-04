@@ -1,56 +1,89 @@
 ﻿module BroadcastConsole.Test.Mocks
 
 open System
+open System.Collections.Concurrent
+open System.Collections.Generic
+open System.Threading
 open BroadcastConsole.Common
 open BroadcastConsole.Common.Interfaces
 
-type ConnectionMock(name: string) =
+
+let private waitOrFail condition =
+    let mutable i = 0
+    while i < 5 && condition () do
+        Thread.Sleep 0
+        i <- i + 1
+
+    if condition () then
+        failwith "Timeout"
+
+type ConnectionMock(listener: ConnectionListenerMock, name: string) as this =
     let connectionName = Guid.NewGuid().ToString().Substring(0, 8)
-    let mutable isRegistered = false
     let history = new ResizeArray<Message>()
+    let oppositeConnection = new OppositeConnectionMock(this)
 
-    new() = new ConnectionMock("DefaultChannelName")
+    do
+        listener.ConnectionQueue.Enqueue(oppositeConnection)
+        listener.WaitHandle.Reset() |> ignore
 
-    member this.IsRegistered = isRegistered
-    member this.MessageHistory : Message[] =
-        history.ToArray()
+    /// Default constructor with default channel name
+    new (listener: ConnectionListenerMock) =
+        new ConnectionMock(listener, "DefaultChannelName")
+
+    member val IsRegistered : bool = false with get, set
+    member val MessageQueue = new Queue<Message>()
+    member val MessageHistory = new ResizeArray<Message>()
 
     interface IConnection with
         member this.Receive () =
-            isRegistered <- true
-            name
+            waitOrFail (fun () -> oppositeConnection.MessageQueue.Count = 0)
+
+            let msg = oppositeConnection.MessageQueue.Dequeue()
+            this.MessageHistory.Add(msg)
+            msg
 
         member this.Send (msg: Message) =
-            history.Add(msg)
+            this.MessageQueue.Enqueue(msg)
+            this.MessageHistory.Add(msg)
             printfn "[%O][%O] %O" connectionName name msg
 
         member this.Dispose () = ()
 
-type ConnectionListenerMock(maxConnections: int, gen) =
-    let channels = new ResizeArray<ConnectionMock>()
-    let mutable channelNameGenerator = gen
+and OppositeConnectionMock(connection: ConnectionMock) =
+    let history = new ResizeArray<Message>()
+    let messageQueue = new Queue<Message>()
 
-    new() = new ConnectionListenerMock(1)
+    member val SourceConnection : ConnectionMock = connection
+    member val MessageQueue : Queue<_> = messageQueue
 
-    new(maxConnections: int) =
-        let defaultGen () = "DefaultChannelName"
-        new ConnectionListenerMock(maxConnections, defaultGen)
-    
-    new(gen: unit -> string) =
-        new ConnectionListenerMock(-1, gen)
+    interface IConnection with
+        member this.Receive () =
+            waitOrFail (fun () -> this.SourceConnection.MessageQueue.Count = 0)
 
-    member this.ConnectionCount : int = channels.Count
-    member this.GotConnection : bool = channels.Count > 0
-    member this.OpenedChannels : ConnectionMock[] =
-        channels.ToArray()
+            this.SourceConnection.IsRegistered <- true
+            this.SourceConnection.MessageQueue.Dequeue()
+
+        member this.Send (msg: Message) =
+            messageQueue.Enqueue(msg)
+
+        member this.Dispose () = ()
+
+and ConnectionListenerMock() =
+    let connectionQueue = new ConcurrentQueue<OppositeConnectionMock>()
+    let connections = new ResizeArray<OppositeConnectionMock>()
+
+    member val WaitHandle : AutoResetEvent = new AutoResetEvent(false)
+    member this.ConnectionQueue : ConcurrentQueue<_> = connectionQueue
+    member this.ConnectionCount : int = connections.Count
+    member this.GotConnection : bool = connections.Count > 0
+    member this.OpenedConnections : OppositeConnectionMock[] =
+        connections.ToArray()
 
     interface IConnectionListener with
         member this.Accept () =
-            if (this.ConnectionCount < maxConnections) then
-                let name = channelNameGenerator()
-                let result = new ConnectionMock(name)
+            this.WaitHandle.WaitOne() |> ignore
 
-                channels.Add(result)
-                result :> IConnection
-            else
-                failwith "Max connections reached"
+            let _, result  = this.ConnectionQueue.TryDequeue()
+            connections.Add(result)
+
+            result :> IConnection

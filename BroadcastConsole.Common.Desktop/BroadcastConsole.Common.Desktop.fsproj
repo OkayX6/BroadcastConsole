@@ -43,7 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Implementation.fs" />
-    <None Include="Script.fsx" />
+    <None Include="DeployServer.fsx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BroadcastConsole.Common\BroadcastConsole.Common.fsproj">

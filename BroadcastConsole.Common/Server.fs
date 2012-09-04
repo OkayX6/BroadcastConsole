@@ -46,12 +46,13 @@ type Server(listener: IConnectionListener) as this =
 
     let rec acceptConnectionLoop () =
         async {
-            let! channel = asyncAccept ()
-            
-            do! processChannel channel
+            try
+                let channel = listener.Accept()
+                do! processChannel channel
+            with
+                _ -> ()
 
-            try do! acceptConnectionLoop ()
-            with _ -> ()
+            return! acceptConnectionLoop ()
         }
 
     do

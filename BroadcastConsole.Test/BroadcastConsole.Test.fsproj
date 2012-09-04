@@ -39,6 +39,9 @@
     <None Include="MSTest.runsettings" />
     <Compile Include="Utils.fs" />
     <Compile Include="Mocks.fs" />
+    <Compile Include="HelpersTests.fs">
+      <SubType>Test</SubType>
+    </Compile>
     <Compile Include="ServerTests.fs" />
   </ItemGroup>
   <ItemGroup>

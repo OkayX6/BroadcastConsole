@@ -36,13 +36,13 @@ namespace BroadcastConsole.Common.WinRT
             dataReader.LoadAsync(4).AsTask().Wait();
             dataReader.ReadBytes(msgSizeByteArray);
 
-            int msgSize = Helpers.intOfByteArray(msgSizeByteArray);
+            int msgSize = Helpers.byteArrayToInt(msgSizeByteArray);
 
             byte[] msgByteArray = new byte[msgSize];
             dataReader.LoadAsync((uint) msgSize).AsTask().Wait();
             dataReader.ReadBytes(msgByteArray);
 
-            string message = Helpers.stringOfByteArray(msgByteArray);
+            string message = Helpers.byteArrayToString(msgByteArray);
             return message;
         }
 
@@ -51,8 +51,8 @@ namespace BroadcastConsole.Common.WinRT
             var ostream = this.streamSocket.OutputStream;
             var dataWriter = new DataWriter(ostream);
 
-            byte[] msgByteArray = Helpers.byteArrayOfString(message);
-            byte[] msgSizeByteArray = Helpers.byteArrayOfInt(msgByteArray.Length);
+            byte[] msgByteArray = Helpers.stringToByteArray(message);
+            byte[] msgSizeByteArray = Helpers.intToByteArray(msgByteArray.Length);
 
             dataWriter.WriteBytes(msgSizeByteArray);
             dataWriter.WriteBytes(msgByteArray);
