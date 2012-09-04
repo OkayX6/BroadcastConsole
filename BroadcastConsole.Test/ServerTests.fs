@@ -1,5 +1,6 @@
 ﻿namespace BroadcastConsole.Test
 
+open System
 open System.Threading
 open Microsoft.VisualStudio.TestTools.UnitTesting
 open BroadcastConsole.Common
@@ -11,7 +12,11 @@ open TestUtils
 [<TestClass>]
 type ServerTests() =
     let wait (ms: int) = Thread.Sleep(millisecondsTimeout = ms)
-    let shortWait () = wait 10
+    let shortWait () =
+        Console.Write("Waiting... ")
+        wait 10
+        Console.WriteLine("Done")
+
     let functionTimesOut (f: unit -> _) =
         let asyncFun =
             async {
@@ -20,7 +25,7 @@ type ServerTests() =
             }
         
         try
-            let _ = Async.RunSynchronously (asyncFun, 10)
+            let _ = Async.RunSynchronously (asyncFun, 20)
             false
         with
             _ -> true
@@ -43,8 +48,6 @@ type ServerTests() =
         let server = new Server(listener)
         do shortWait ()
 
-        let create () = new ConnectionMock(listener)
-
         let c1 = new ConnectionMock(listener)
         let c2 = new ConnectionMock(listener)
         let c3 = new ConnectionMock(listener)
@@ -59,7 +62,6 @@ type ServerTests() =
         do shortWait ()
 
         let connection = new ConnectionMock(listener)
-        (connection :> IConnection).Send("channelName")
         do shortWait ()
 
         (?+) connection.IsRegistered
@@ -90,7 +92,7 @@ type ServerTests() =
         let Message2 = "denis"
         let listener = new ConnectionListenerMock()
         let server = new Server(listener)
-        let connection = new ConnectionMock(listener, ChannelName) :> IConnection
+        let connection = new ConnectionMock(listener, ChannelName)
         do shortWait ()
 
         // Send message to a wrong and the correct one
