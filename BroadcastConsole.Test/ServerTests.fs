@@ -86,8 +86,6 @@ type ServerTests() =
         let Message2 = "denis"
         let listener = new ConnectionListenerMock()
         let server = new Server(listener)
-        do shortWait ()
-
         let connection = new ConnectionMock(listener, ChannelName)
         do shortWait ()
 
@@ -97,7 +95,6 @@ type ServerTests() =
         server.SendMessage(ChannelName + "0", Message1)
         server.SendMessage(ChannelName, Message1)
         server.SendMessage(ChannelName, Message2)
-        do shortWait ()
         do shortWait ()
 
         let msg1 = connection.Receive()
