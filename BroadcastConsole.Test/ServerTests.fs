@@ -12,23 +12,14 @@ open TestUtils
 [<TestClass>]
 type ServerTests() =
     let wait (ms: int) = Thread.Sleep(millisecondsTimeout = ms)
-    let shortWait () =
-        Console.Write("Waiting... ")
-        wait 10
-        Console.WriteLine("Done")
+    let shortWait () = wait 50
 
     let functionTimesOut (f: unit -> _) =
-        let asyncFun =
-            async {
-                do! Async.SwitchToThreadPool()
-                return f()
-            }
-        
-        try
-            let _ = Async.RunSynchronously (asyncFun, 20)
+        let task = System.Threading.Tasks.Task.Factory.StartNew(new Func<_>(f))
+        if task.Wait(50) then
             false
-        with
-            _ -> true
+        else
+            true
 
     [<TestMethod>]
     member this.Server_Accepts_OneSubscriber() =
@@ -70,6 +61,8 @@ type ServerTests() =
     member this.Subscribers_WhenConnected_AreRequestedTheirChannelName() =
         let listener = new ConnectionListenerMock()
         let server = new Server(listener)
+        do shortWait ()
+
         let connections =
             [
                 new ConnectionMock(listener)
@@ -78,8 +71,9 @@ type ServerTests() =
             ]
 
         do shortWait ()
+        do shortWait ()
 
-        connections.Length == listener.OpenedConnections.Length
+        connections.Length == listener.ConnectionCount
 
         listener.OpenedConnections
         |> Seq.map (fun oppCon -> oppCon.SourceConnection)
@@ -92,13 +86,18 @@ type ServerTests() =
         let Message2 = "denis"
         let listener = new ConnectionListenerMock()
         let server = new Server(listener)
+        do shortWait ()
+
         let connection = new ConnectionMock(listener, ChannelName)
         do shortWait ()
+
+        (?+) connection.ChannelNameIsRequested
 
         // Send message to a wrong and the correct one
         server.SendMessage(ChannelName + "0", Message1)
         server.SendMessage(ChannelName, Message1)
         server.SendMessage(ChannelName, Message2)
+        do shortWait ()
         do shortWait ()
 
         let msg1 = connection.Receive()
@@ -133,9 +132,11 @@ type ServerTests() =
         let Message = "hello"
         let listener = new ConnectionListenerMock()
         let server = new Server(listener)
-        let c1 = new ConnectionMock(listener, Channel1) :> IConnection
-        let c2 = new ConnectionMock(listener, Channel2) :> IConnection
-        let c3 = new ConnectionMock(listener, Channel3) :> IConnection
+        do shortWait ()
+
+        let c1 = new ConnectionMock(listener, Channel1)
+        let c2 = new ConnectionMock(listener, Channel2)
+        let c3 = new ConnectionMock(listener, Channel3)
         do shortWait ()
 
         // Send message to a wrong and the correct one
@@ -144,7 +145,7 @@ type ServerTests() =
         server.SendMessage(Channel3, Message)
         do shortWait ()
 
-        3 == listener.OpenedConnections.Length
+        3 == listener.ConnectionCount
 
         for connection in [c1; c2; c3] do
             let msg = connection.Receive()

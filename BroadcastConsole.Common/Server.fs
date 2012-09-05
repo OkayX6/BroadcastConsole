@@ -47,8 +47,13 @@ type Server(listener: IConnectionListener) as this =
     let rec acceptConnectionLoop () =
         async {
             try
+                let context = SynchronizationContext.Current
+
+                do! Async.SwitchToNewThread()
                 let channel = listener.Accept()
-                do! processChannel channel
+                do! Async.SwitchToContext(context)
+
+                Async.Start (processChannel channel)
             with
                 _ -> ()
 
