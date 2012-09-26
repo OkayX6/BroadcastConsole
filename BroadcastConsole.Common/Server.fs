@@ -3,6 +3,7 @@
 open System
 open System.Collections.Generic
 open System.Threading
+open System.Threading.Tasks
 open BroadcastConsole.Common
 open BroadcastConsole.Common.Interfaces
 
@@ -16,7 +17,7 @@ type Server(listener: IConnectionListener) as this =
         failwith <| sprintf "Unknown channel name: %O" name
 
     let lockObject = new Object()
-    let asyncAccept () = async { return! listener.Accept |> Helpers.toAsync }
+    //let asyncAccept () = async { return! listener.Accept |> Helpers.toAsync }
     let tokenSource = new CancellationTokenSource()
     let inputChannels = new Dictionary<IConnection, string>()
     let outputChannels = new Dictionary<string, Event<Message>>()
@@ -26,10 +27,13 @@ type Server(listener: IConnectionListener) as this =
             async {
                 let! channelName, msg = mbox.Receive()
 
-                lock(lockObject)
-                    (fun () ->
-                        if outputChannels.ContainsKey(channelName) then
-                            outputChannels.[channelName].Trigger(msg))
+                try
+                    lock(lockObject)
+                        (fun () ->
+                            if outputChannels.ContainsKey(channelName) then
+                                outputChannels.[channelName].Trigger(msg))
+                with
+                    _ -> ()
 
                 do! agentLoop mbox
             }
@@ -38,21 +42,19 @@ type Server(listener: IConnectionListener) as this =
 
     let rec processChannel (connection: IConnection) =
         async {
-            let asyncReceive = connection.Receive |> Helpers.toAsync
-            let! channelName = asyncReceive
+            let channelName = connection.Receive()
 
             this.AddChannelReceiver(channelName, connection.Send)
         }
 
+    let processChannelTask (connection: IConnection) =
+        let channelName = connection.Receive()
+        this.AddChannelReceiver(channelName, connection.Send)
+
     let rec acceptConnectionLoop () =
         async {
             try
-                let context = SynchronizationContext.Current
-
-                do! Async.SwitchToNewThread()
                 let channel = listener.Accept()
-                do! Async.SwitchToContext(context)
-
                 Async.Start (processChannel channel)
             with
                 _ -> ()
@@ -60,9 +62,22 @@ type Server(listener: IConnectionListener) as this =
             return! acceptConnectionLoop ()
         }
 
+    let token = tokenSource.Token
+
+    let task =
+        new Task(
+            fun () ->
+                while not token.IsCancellationRequested do
+                    try
+                        let channel = listener.Accept()
+                        Task.Factory.StartNew(new Action(fun _ -> processChannelTask channel)) |> ignore
+                    with
+                        _ -> ())
+
     do
-        acceptConnectionLoop ()
-        |> Async.Start
+        task.Start()
+//        acceptConnectionLoop ()
+//        |> Async.Start
 
     member this.SendMessage (channelName: string, msg: Message) =
         agent.Post(channelName, msg)
@@ -81,3 +96,7 @@ type Server(listener: IConnectionListener) as this =
                 Event.add channelMessageSender
                           outputChannels.[channelName].Publish
             )
+
+    interface IDisposable with
+        member this.Dispose() =
+            tokenSource.Cancel()

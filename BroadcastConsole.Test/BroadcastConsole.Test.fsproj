@@ -55,6 +55,11 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BroadcastConsole.Common.Desktop\BroadcastConsole.Common.Desktop.fsproj">
+      <Name>BroadcastConsole.Common.Desktop</Name>
+      <Project>{2f9d332a-538c-459b-afc2-43c15c219b30}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\BroadcastConsole.Common\BroadcastConsole.Common.fsproj">
       <Name>BroadcastConsole.Common</Name>
       <Project>{f566dcfc-f34f-4c4c-b853-c216f516ca1b}</Project>

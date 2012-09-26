@@ -31,6 +31,9 @@ module TestUtils
     /// not implement, always fail
     let inline notImplemented() = failwith "not implemented"; ()
 
+    let getThreadId () =
+        System.Threading.Thread.CurrentThread.ManagedThreadId
+
     type Assert with
 
         /// assert source function and target function generates same sequence when given same input
