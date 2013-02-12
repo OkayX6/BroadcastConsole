@@ -6,7 +6,6 @@ open System.Collections.Generic
 open System.Net.Sockets
 open System.Threading
 open BroadcastConsole.Common
-open BroadcastConsole.Common.Desktop
 open BroadcastConsole.Common.Interfaces
 
 type PrinterMessage =
@@ -38,7 +37,7 @@ let endPrinterSession () =
 
 let private waitOrFail condition =
     let mutable i = 0
-    while i < 10 && condition () do
+    while i < 5 && condition () do
         Thread.Sleep 50
         i <- i + 1
 
@@ -76,28 +75,6 @@ type ConcurrentQueueWrapper<'a>() =
                             autoResetEvent.Reset() |> ignore)
 
                 result)
-
-let SubscribersPort = 2009
-let PublishersPort = 2010
-
-//type TestConnectionListener(port: int) =
-//    let listener = TcpConnectionListener(port) :> IConnectionListener
-//
-//    let mutable gotConnection = false
-//    let mutable connectionCount = 0
-//
-//    member val GotConnection = gotConnection
-//    member val ConnectionCount = 0
-//
-//    interface IConnectionListener with
-//        member this.Accept () =
-//            let result = listener.Accept()
-//            gotConnection <- true
-//            connectionCount <- connectionCount + 1
-//            result
-//
-//type TestConnection(port: int) =
-//    inherit TcpConnection("127.0.0.1", port)
 
 type ConnectionMock(listener: ConnectionListenerMock, name: string) as this =
     let connectionName = Guid.NewGuid().ToString().Substring(0, 8)
@@ -191,7 +168,7 @@ and ConnectionListenerMock() =
                     true)
 
     member this.WaitConnection() =
-        match waitHandle.Wait(1000) with
+        match waitHandle.Wait(100) with
         | true -> ()
         | false -> failwith "Waited connection without success"
 

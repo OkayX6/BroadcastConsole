@@ -17,7 +17,6 @@ type Server(listener: IConnectionListener) as this =
         failwith <| sprintf "Unknown channel name: %O" name
 
     let lockObject = new Object()
-    //let asyncAccept () = async { return! listener.Accept |> Helpers.toAsync }
     let tokenSource = new CancellationTokenSource()
     let inputChannels = new Dictionary<IConnection, string>()
     let outputChannels = new Dictionary<string, Event<Message>>()
@@ -62,22 +61,9 @@ type Server(listener: IConnectionListener) as this =
             return! acceptConnectionLoop ()
         }
 
-    let token = tokenSource.Token
-
-    let task =
-        new Task(
-            fun () ->
-                while not token.IsCancellationRequested do
-                    try
-                        let channel = listener.Accept()
-                        Task.Factory.StartNew(new Action(fun _ -> processChannelTask channel)) |> ignore
-                    with
-                        _ -> ())
-
     do
-        task.Start()
-//        acceptConnectionLoop ()
-//        |> Async.Start
+        acceptConnectionLoop ()
+        |> Async.Start
 
     member this.SendMessage (channelName: string, msg: Message) =
         agent.Post(channelName, msg)

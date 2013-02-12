@@ -13,14 +13,11 @@ open TestUtils
 [<TestClass>]
 type ServerTests() =
     let wait (ms: int) = Thread.Sleep(millisecondsTimeout = ms)
-    let shortWait () = wait 300
-
-    let SubscribersPort = 2009
-    let PublishersPort = 2010
+    let shortWait () = wait 25
 
     let functionTimesOut (f: unit -> _) =
         let task = Task.Factory.StartNew(new Func<_>(f))
-        if task.Wait(50) then
+        if task.Wait(25) then
             false
         else
             true
@@ -38,8 +35,6 @@ type ServerTests() =
         (?+) listener.GotConnection
         (?-) <| listener.WaitConnectionCount 2
 
-        endPrinterSession ()
-
     [<TestMethod>]
     member this.Server_Accepts_ManySubscribers() =
         let listener = new ConnectionListenerMock()
@@ -54,8 +49,6 @@ type ServerTests() =
         (?+) <| listener.WaitConnectionCount 3
         (?-) <| listener.WaitConnectionCount 4
 
-        endPrinterSession ()
-
     [<TestMethod>]
     member this.Subscriber_WhenConnected_IsRequestedChannelName() =
         let listener = new ConnectionListenerMock()
@@ -67,14 +60,10 @@ type ServerTests() =
 
         connection.WaitToBeRequested()
 
-        endPrinterSession ()
-
     [<TestMethod>]
     member this.Subscribers_WhenConnected_AreRequestedTheirChannelName() =
         let listener = new ConnectionListenerMock()
         let server = new Server(listener)
-        do shortWait ()
-
         let connections =
             [
                 new ConnectionMock(listener)
@@ -88,8 +77,6 @@ type ServerTests() =
         listener.OpenedConnections
         |> Seq.map (fun oppCon -> oppCon.SourceConnection)
         |> Seq.iter (fun srcCon -> srcCon.WaitToBeRequested())
-
-        endPrinterSession ()
 
     [<TestMethod>]
     member this.Subscriber_WhenServerSendsMessages_ToCorrectChannel_IsNotified() =
@@ -116,8 +103,6 @@ type ServerTests() =
         Message1 == msg1
         Message2 == msg2
 
-        endPrinterSession ()
-
     [<TestMethod>]
     member this.Subscriber_WhenServerSendsMessages_ToOtherChannels_IsNotNotified() =
         let ChannelName = "Channel"
@@ -135,8 +120,6 @@ type ServerTests() =
 
         (?+) (functionTimesOut connection.Receive)
 
-        endPrinterSession ()
-
     //[<TestMethod>]
     member this.Subscribers_WhenServerSendsMessages_ToCorrectChannel_IsNotified() =
         let Channel1 = "Channel1"
@@ -150,8 +133,6 @@ type ServerTests() =
         let c1 = new ConnectionMock(listener, Channel1)
         let c2 = new ConnectionMock(listener, Channel2)
         let c3 = new ConnectionMock(listener, Channel3)
-        do shortWait ()
-        do shortWait ()
         do shortWait ()
 
         (?+) <| listener.WaitConnectionCount 3
@@ -168,8 +149,6 @@ type ServerTests() =
 
             (?+) (functionTimesOut connection.Receive)
             Message == msg
-
-        endPrinterSession ()
 
     //[<TestMethod>]
     member this.Subscribers_ToSameChannel_WhenServerSendsMessages_AreNotified() =
@@ -208,8 +187,6 @@ type ServerTests() =
 
             3 == history.Count
             sendMsgSet == receivedMsgSet
-
-        endPrinterSession ()
 
 //    [<TestMethod>]
 //    member this.Server_KnowsWhenSubscriberConnectionIsLost() =
