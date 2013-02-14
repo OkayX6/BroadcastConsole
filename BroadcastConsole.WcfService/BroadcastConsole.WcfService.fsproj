@@ -47,13 +47,6 @@
     <Compile Include="Server.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\BroadcastConsole.Common\BroadcastConsole.Common.fsproj">
-      <Name>BroadcastConsole.Common</Name>
-      <Project>{f566dcfc-f34f-4c4c-b853-c216f516ca1b}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>

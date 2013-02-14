@@ -4,9 +4,10 @@ open System
 open System.Collections.Generic
 open System.ServiceModel
 
-[<ServiceContract(Namespace = "http://OkayX6.BroadcastConsole.Subscribers",
-                  SessionMode = SessionMode.Required,
-                  CallbackContract = typeof<ISubscriberServerDuplexCallback>)>]
+//[<ServiceContract(Namespace = "http://OkayX6.BroadcastConsole.Subscribers",
+//                  SessionMode = SessionMode.Required,
+//                  CallbackContract = typeof<ISubscriberServerDuplexCallback>)>]
+[<ServiceContract(Namespace = "http://OkayX6.BroadcastConsole.Subscribers")>]
 type ISubscriberServer =
     [<OperationContract()>]
     abstract member SubscribeTo : channel: string -> unit

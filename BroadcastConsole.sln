@@ -15,6 +15,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "BroadcastConsole.WcfService
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BroadcastConsole.WcfHost", "BroadcastConsole.WcfHost\BroadcastConsole.WcfHost.csproj", "{793D4029-F9E6-4E69-A6E8-E17658CA06D3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BroadcastConsole.WcfClient", "BroadcastConsole.WcfClient\BroadcastConsole.WcfClient.csproj", "{CA3C4E0F-5C56-4681-BDB8-22F49E9DD82E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -117,6 +119,16 @@ Global
 		{793D4029-F9E6-4E69-A6E8-E17658CA06D3}.Release|ARM.ActiveCfg = Release|Any CPU
 		{793D4029-F9E6-4E69-A6E8-E17658CA06D3}.Release|x64.ActiveCfg = Release|Any CPU
 		{793D4029-F9E6-4E69-A6E8-E17658CA06D3}.Release|x86.ActiveCfg = Release|Any CPU
+		{CA3C4E0F-5C56-4681-BDB8-22F49E9DD82E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA3C4E0F-5C56-4681-BDB8-22F49E9DD82E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA3C4E0F-5C56-4681-BDB8-22F49E9DD82E}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{CA3C4E0F-5C56-4681-BDB8-22F49E9DD82E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CA3C4E0F-5C56-4681-BDB8-22F49E9DD82E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CA3C4E0F-5C56-4681-BDB8-22F49E9DD82E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA3C4E0F-5C56-4681-BDB8-22F49E9DD82E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA3C4E0F-5C56-4681-BDB8-22F49E9DD82E}.Release|ARM.ActiveCfg = Release|Any CPU
+		{CA3C4E0F-5C56-4681-BDB8-22F49E9DD82E}.Release|x64.ActiveCfg = Release|Any CPU
+		{CA3C4E0F-5C56-4681-BDB8-22F49E9DD82E}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

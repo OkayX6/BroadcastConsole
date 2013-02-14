@@ -15,7 +15,7 @@ namespace BroadcastConsole.WcfHost
         static void Main(string[] args)
         {
             // Step 1 Create a URI to serve as the base address.
-            Uri baseAddress = new Uri("http://localhost:8000/");
+            Uri baseAddress = new Uri("http://localhost:8000/BroadcastConsole/");
 
             //var server = new Server();
 
@@ -25,11 +25,13 @@ namespace BroadcastConsole.WcfHost
             try
             {
                 // Step 3 Add a service endpoint.
-                selfHost.AddServiceEndpoint(typeof(ISubscriberServer), new WSDualHttpBinding(), "SubscriberServer");
+                //selfHost.AddServiceEndpoint(typeof(ISubscriberServer), new WSDualHttpBinding(), "SubscriberServer");
+                selfHost.AddServiceEndpoint(typeof(ISubscriberServer), new WSHttpBinding(), "SubscriberServer");
 
                 // Step 4 Enable metadata exchange.
                 ServiceMetadataBehavior smb = new ServiceMetadataBehavior();
                 smb.HttpGetEnabled = true;
+                smb.MetadataExporter.PolicyVersion = PolicyVersion.Policy15;
                 selfHost.Description.Behaviors.Add(smb);
 
                 // Step 5 Start the service.
